@@ -27,9 +27,7 @@ const FileTracker = () => {
     "function getFileHashTimestamps(bytes32 _fileHash) public view returns (uint256[] memory)",
   ];
 
-  const logStep = (message) => {
-    setLogs((prevLogs) => [...prevLogs, message]);
-  };
+  const logStep = (message) => setLogs((prevLogs) => [...prevLogs, message]);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -37,15 +35,22 @@ const FileTracker = () => {
       setFile(selectedFile);
       setFileName(selectedFile.name);
       setFileSize(selectedFile.size);
-      setUploaded(false);
-      setLogs([]);
-      setError(null); // Clear error when a new file is selected
-      logStep("File selected: " + selectedFile.name);
+      resetState();
+      logStep(`File selected: ${selectedFile.name}`);
     }
   };
 
-  const handleUpload = async () => {
-    setError(null); // Clear previous error
+  const resetState = () => {
+    setHash(null);
+    setFileId(null);
+    setHistory([]);
+    setError(null);
+    setUploaded(false);
+    setLogs([]);
+  };
+
+  const handleUpload = () => {
+    setError(null);
     if (file) {
       setUploading(true);
       const reader = new FileReader();
@@ -54,13 +59,11 @@ const FileTracker = () => {
           const content = arrayify(new Uint8Array(e.target.result));
           logStep("File content read successfully");
           const computedHash = keccak256(content);
-          logStep("Computed hash: " + computedHash);
+          logStep(`Computed hash: ${computedHash}`);
           setHash(computedHash);
-
           setUploaded(true);
         } catch (err) {
-          console.error('Error during file processing:', err);
-          setError('Error computing hash or storing data: ' + err.message);
+          handleError('Error computing hash or storing data', err);
         } finally {
           setUploading(false);
         }
@@ -72,7 +75,7 @@ const FileTracker = () => {
   };
 
   const handleAddToChain = async () => {
-    setError(null); // Clear previous error
+    setError(null);
     if (hash && fileName && fileSize) {
       try {
         const wallet = new ethers.Wallet(process.env.REACT_APP_PRIVATE_KEY, provider);
@@ -80,24 +83,15 @@ const FileTracker = () => {
         const contract = new ethers.Contract(contractAddress, contractABI, wallet);
         logStep("Contract instance created");
 
-        // Ensure hash is correctly formatted
-        if (typeof hash !== 'string') {
-          logStep("Invalid hash format");
-          throw new Error('Invalid hash format');
-        }
-
-        // Store hash and metadata on-chain
         const tx = await contract.storeFileHash(hash, fileName, fileSize);
-        logStep("Transaction sent: " + tx.hash);
+        logStep(`Transaction sent: ${tx.hash}`);
         await tx.wait();
         logStep("Transaction confirmed");
 
-        setFileId(hash); // Set file ID after transaction is confirmed
-        logStep("File ID set: " + hash);
+        setFileId(hash);
+        logStep(`File ID set: ${hash}`);
       } catch (err) {
-        console.error('Error during blockchain interaction:', err);
-        logStep('Error storing data on blockchain: ' + err.message);
-        setError('Error storing data on blockchain: ' + err.message);
+        handleError('Error storing data on blockchain', err);
       }
     } else {
       setError('File hash, name, or size is missing');
@@ -105,17 +99,10 @@ const FileTracker = () => {
   };
 
   const handleVerify = async () => {
-    setError(null); // Clear previous error
+    setError(null);
     if (!file) {
-      setError('No file selected for verification');
       logStep('No file selected for verification');
-      return;
-    }
-
-    if (!fileId) {
-      setError('No file ID provided for verification');
-      logStep('No file ID provided for verification');
-      return;
+      return setError('No file selected for verification');
     }
 
     const reader = new FileReader();
@@ -124,42 +111,43 @@ const FileTracker = () => {
         const content = arrayify(new Uint8Array(e.target.result));
         logStep("File content read successfully for verification");
         const computedHash = keccak256(content);
-        logStep("Computed hash for verification: " + computedHash);
+        logStep(`Computed hash for verification: ${computedHash}`);
+
+        const wallet = new ethers.Wallet(process.env.REACT_APP_PRIVATE_KEY, provider);
+        logStep("Wallet created for verification");
+        const contract = new ethers.Contract(contractAddress, contractABI, wallet);
+        logStep("Contract instance created for verification");
+
+        const metadata = await contract.getFileMetadata(computedHash);
+        logStep(`Metadata retrieved: ${JSON.stringify(metadata)}`);
+        setHistory(metadata[3]);
 
         if (computedHash === fileId) {
           setHash(computedHash);
-          const wallet = new ethers.Wallet(process.env.REACT_APP_PRIVATE_KEY, provider);
-          logStep("Wallet created for verification");
-          const contract = new ethers.Contract(contractAddress, contractABI, wallet);
-          logStep("Contract instance created for verification");
-
-          // Fetch and set the file hash history
-          const metadata = await contract.getFileMetadata(computedHash);
-          logStep("Metadata retrieved: " + JSON.stringify(metadata));
-          setHistory(metadata[3]); // metadata[3] contains the timestamps array
         } else {
-          setError('File content does not match the stored hash.');
-          logStep('File content does not match the stored hash.');
+          handleError('File content does not match the stored hash');
         }
       } catch (err) {
-        console.error('Error during verification:', err);
-        logStep('Error computing hash or verifying data: ' + err.message);
-        setError('Error computing hash or verifying data: ' + err.message);
+        handleError('Error computing hash or verifying data', err);
       }
     };
     reader.readAsArrayBuffer(file);
   };
 
+  const handleError = (message, error) => {
+    console.error(`${message}:`, error);
+    logStep(`${message}: ${error.message}`);
+    setError(`${message}: ${error.message}`);
+  };
+
   const renderHistory = () => {
-    if (!history.length) {
-      return <div>No history found for this hash.</div>;
-    }
+    if (!history.length) return <div>No history found for this hash.</div>;
 
     return (
       <ul>
         {history.map((timestamp, index) => (
           <li key={index}>
-            <div><strong>Timestamp:</strong> {new Date(timestamp * 1000).toLocaleString()}</div>
+            <strong>Timestamp:</strong> {new Date(timestamp * 1000).toLocaleString()}
           </li>
         ))}
       </ul>
