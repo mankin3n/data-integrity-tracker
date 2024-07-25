@@ -26,7 +26,7 @@ The main mission of the Data Integrity Tracker is to ensure the integrity of dig
 
 1. **Clone the repository**:
     ```bash
-    git clone <repository_url>
+    git clone https://github.com/IrminData/data-integrity-tracker
     cd data-integrity-tracker
     ```
 
@@ -91,11 +91,6 @@ The main mission of the Data Integrity Tracker is to ensure the integrity of dig
 3. **Verify File**:
     - To verify a file, upload the file again and click "Verify File". The application will compute the hash and compare it with the one stored on the blockchain.
 
-## Screenshots
-
-### Main Interface
-![Main Interface](screenshot.png)
-
 ## Technologies Used
 
 - **React**: For the front-end user interface.
@@ -151,7 +146,3 @@ contract FileHashStore {
 ## Contribution
 
 Feel free to fork this repository, create issues, and submit pull requests. All contributions are welcome!
-
-## License
-
-This project is licensed under the MIT License.
