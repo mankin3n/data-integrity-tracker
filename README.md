@@ -1,70 +1,157 @@
-# Getting Started with Create React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Data Integrity Tracker
 
-## Available Scripts
+## Mission
 
-In the project directory, you can run:
+The main mission of the Data Integrity Tracker is to ensure the integrity of digital files by leveraging blockchain technology. This application allows users to upload files, compute their cryptographic hashes, and store these hashes on the blockchain. By doing so, users can verify the integrity of their files at any point in time by comparing the current hash of the file with the hash stored on the blockchain. This ensures that any tampering or modifications to the file can be detected easily.
 
-### `npm start`
+## Features
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **File Upload**: Upload any file to the application.
+- **Hash Computation**: Compute the cryptographic hash of the uploaded file.
+- **Blockchain Storage**: Store the file hash and metadata on the blockchain.
+- **Integrity Verification**: Verify the integrity of the file by comparing its current hash with the one stored on the blockchain.
+- **Logging**: Detailed logs for every step of the process to ensure transparency and traceability.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Setup
 
-### `npm test`
+### Prerequisites
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Node.js (v14 or higher)
+- Yarn
+- Ganache CLI (for local blockchain development)
+- MetaMask (for interacting with the blockchain)
 
-### `npm run build`
+### Installation
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. **Clone the repository**:
+    ```bash
+    git clone <repository_url>
+    cd data-integrity-tracker
+    ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+2. **Install dependencies**:
+    ```bash
+    yarn install
+    ```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+3. **Start Ganache CLI**:
+    ```bash
+    ganache-cli
+    ```
 
-### `npm run eject`
+4. **Deploy the smart contract**:
+    Ensure your `truffle-config.js` is set up to connect to the local Ganache instance:
+    ```javascript
+    module.exports = {
+      networks: {
+        development: {
+          host: "127.0.0.1",
+          port: 8545,
+          network_id: "*", // Match any network id
+        },
+      },
+      compilers: {
+        solc: {
+          version: "0.8.0", // Fetch exact version from solc-bin (default: truffle's version)
+        },
+      },
+    };
+    ```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+    Deploy the contract:
+    ```bash
+    truffle migrate --network development
+    ```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+    The contract address will be output in the terminal after a successful deployment. Update your `.env` file with this address and other necessary details.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+5. **Setup environment variables**:
+    Create a `.env` file in the root directory and add the following environment variables:
+    ```
+    REACT_APP_NETWORK=local
+    REACT_APP_CONTRACT_ADDRESS=<your_deployed_contract_address>
+    REACT_APP_PRIVATE_KEY=<private_key_from_ganache>
+    ```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+6. **Start the application**:
+    ```bash
+    yarn start
+    ```
 
-## Learn More
+## Usage
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+1. **Upload File**:
+    - Select a file to upload by clicking on the file input.
+    - Click "Upload File" to compute the file's hash.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+2. **Add to Blockchain**:
+    - After the file is uploaded and the hash is computed, click "Add to Blockchain" to store the file hash and metadata on the blockchain.
 
-### Code Splitting
+3. **Verify File**:
+    - To verify a file, upload the file again and click "Verify File". The application will compute the hash and compare it with the one stored on the blockchain.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Screenshots
 
-### Analyzing the Bundle Size
+### Main Interface
+![Main Interface](screenshot.png)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Technologies Used
 
-### Making a Progressive Web App
+- **React**: For the front-end user interface.
+- **Ethers.js**: To interact with the Ethereum blockchain.
+- **Ganache CLI**: For local blockchain development.
+- **Truffle**: For smart contract deployment.
+- **Solidity**: For writing the smart contract.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## Smart Contract
 
-### Advanced Configuration
+### FileHashStore.sol
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+The `FileHashStore` contract is used to store file hashes and metadata on the blockchain.
 
-### Deployment
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+contract FileHashStore {
+    struct FileMetadata {
+        string fileName;
+        uint256 fileSize;
+        address owner;
+        uint256[] timestamps;
+    }
 
-### `npm run build` fails to minify
+    mapping(bytes32 => FileMetadata) private files;
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+    event FileStored(bytes32 indexed fileHash, string fileName, uint256 fileSize, address indexed owner);
+
+    function storeFileHash(bytes32 _fileHash, string memory _fileName, uint256 _fileSize) public {
+        FileMetadata storage metadata = files[_fileHash];
+        metadata.fileName = _fileName;
+        metadata.fileSize = _fileSize;
+        metadata.owner = msg.sender;
+        metadata.timestamps.push(block.timestamp);
+
+        emit FileStored(_fileHash, _fileName, _fileSize, msg.sender);
+    }
+
+    function getFileMetadata(bytes32 _fileHash) public view returns (string memory, uint256, address, uint256[] memory) {
+        FileMetadata storage metadata = files[_fileHash];
+        return (metadata.fileName, metadata.fileSize, metadata.owner, metadata.timestamps);
+    }
+
+    function getFileHashTimestamps(bytes32 _fileHash) public view returns (uint256[] memory) {
+        FileMetadata storage metadata = files[_fileHash];
+        return metadata.timestamps;
+    }
+}
+```
+
+## Contribution
+
+Feel free to fork this repository, create issues, and submit pull requests. All contributions are welcome!
+
+## License
+
+This project is licensed under the MIT License.
